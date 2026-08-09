@@ -1,0 +1,8 @@
+upstream_repo: koel/koel
+version_strategy: release
+pinned:
+  - file: services/app/Dockerfile
+    kind: from_tag
+# Docker Hub tags (phanan/koel) are semver without the leading "v" from GitHub
+# Releases (v9.11.0 → 9.11.0). Review upstream-check PRs and strip "v" if needed.
+# postgres is not listed — infra cadence, not app version.

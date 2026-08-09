@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-koel}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-koel_dev}
+      POSTGRES_DB: ${DB_DATABASE:-koel}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME:-koel} -d ${DB_DATABASE:-koel}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build:
+      context: ./services/app
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:80"
+    environment:
+      APP_NAME: Koel
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:-}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      FORCE_HTTPS: ${FORCE_HTTPS:-false}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${DB_DATABASE:-koel}
+      DB_USERNAME: ${DB_USERNAME:-koel}
+      DB_PASSWORD: ${DB_PASSWORD:-koel_dev}
+      MEDIA_PATH: /data/music
+      STREAMING_METHOD: x-sendfile
+      MEMORY_LIMIT: ${MEMORY_LIMIT:-}
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      LASTFM_API_SECRET: ${LASTFM_API_SECRET:-}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+    volumes:
+      - koel-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/sw.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+
+volumes:
+  postgres-data:
+  koel-data:
